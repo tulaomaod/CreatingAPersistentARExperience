@@ -95,9 +95,10 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     /// - Tag: CheckMappingStatus
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        // 保存按钮可用，当map 状态是mapped extending，且模型已放置情况下
         // Enable Save button only when the mapping status is good and an object has been placed
         switch frame.worldMappingStatus {
-        case .extending, .mapped:
+        case .extending, .mapped: // map 是 extending mapped情况下保存按钮可用
             saveExperienceButton.isEnabled =
                 virtualObjectAnchor != nil && frame.anchors.contains(virtualObjectAnchor!)
         default:
@@ -113,11 +114,13 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     // MARK: - ARSessionObserver
     
     func sessionWasInterrupted(_ session: ARSession) {
+        // 通知用户session 已中断
         // Inform the user that the session has been interrupted, for example, by presenting an overlay.
         sessionInfoLabel.text = "Session was interrupted"
     }
     
     func sessionInterruptionEnded(_ session: ARSession) {
+        // 如果想要一致的追踪 需要重置追踪或删除锚点
         // Reset tracking and/or remove existing anchors if consistent tracking is required.
         sessionInfoLabel.text = "Session interruption ended"
     }
@@ -227,6 +230,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         isRelocalizingMap = false
         virtualObjectAnchor = nil
     }
+    
     /// 更新worldMappingStatus + TrackingState 状态提示
     private func updateSessionInfoLabel(for frame: ARFrame, trackingState: ARCamera.TrackingState) {
         // Update the UI to provide feedback on the state of the AR experience.
