@@ -72,7 +72,6 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         sceneView.session.pause()
     }
     
-    
     // MARK: - ARSCNViewDelegate
     
     /// - Tag: RestoreVirtualContent
@@ -80,6 +79,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         guard anchor.name == virtualObjectAnchorName
             else { return }
         
+        //
         // save the reference to the virtual object anchor when the anchor is added from relocalizing
         if virtualObjectAnchor == nil {
             virtualObjectAnchor = anchor
@@ -126,11 +126,30 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     }
     
     func session(_ session: ARSession, didFailWithError error: Error) {
+        // 向用户展示错误消息
         // Present an error message to the user.
         sessionInfoLabel.text = "Session failed: \(error.localizedDescription)"
         resetTracking(nil)
     }
     
+    /*
+     session中断后是否尝试恢复世界追踪状态
+     session中断后ARkit无法追踪设备的位置和方向（session.pause() 、 切换应用、断点）
+     
+     此方法未实现或者返回false，ARKit世界坐标系和锚点位置不在与设备的真实环境相匹配
+     如果返回true，ARKit尝试协调中断前后的世界追踪状态，在此过程中，追踪质量是有限的（原因值为ARCamera.TrackingState.Reason.relocalizing ）
+     而且Hit-test 和锚点位置可能不太准确，如果成功，重定位会短时间结束，世界坐标系和锚位置会反应中断前的状态
+     
+     要使重定位成功，必须将设备返回到session中断时的位置和方向附近，如果这些条件不能满足（设备已完全移至不同的环境）
+     session将无限期的停留在ARCamera.TrackingState.Reason.relocalizing
+     
+     重要提示：
+     当app处于ARCamera.TrackingState.Reason.relocalizing状态，为用户提供一个出路，以防重定位不能成功
+     
+     
+     
+     
+     */
     func sessionShouldAttemptRelocalization(_ session: ARSession) -> Bool {
         return true
     }
