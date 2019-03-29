@@ -18,6 +18,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     @IBOutlet weak var saveExperienceButton: UIButton!
     @IBOutlet weak var loadExperienceButton: UIButton!
     @IBOutlet weak var statusLabel: UILabel!
+    /// 快照缩略图
     @IBOutlet weak var snapshotThumbnail: UIImageView!
     
     // MARK: - View Life Cycle
@@ -175,12 +176,13 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
             guard let map = worldMap
                 else { self.showAlert(title: "Can't get current world map", message: error!.localizedDescription); return }
             
+            // 添加快照图片，指示捕获地图的位置
             // Add a snapshot image indicating where the map was captured.
             guard let snapshotAnchor = SnapshotAnchor(capturing: self.sceneView)
                 else { fatalError("Can't take snapshot") }
             map.anchors.append(snapshotAnchor)
             
-            do {
+            do { // 归档 保存map到本地
                 let data = try NSKeyedArchiver.archivedData(withRootObject: map, requiringSecureCoding: true)
                 try data.write(to: self.mapSaveURL, options: [.atomic])
                 DispatchQueue.main.async {
@@ -215,6 +217,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
             }
         }()
         
+        // 显示存储在世界地图的快照图像，帮助用户重新定位
         // Display the snapshot image stored in the world map to aid user in relocalizing.
         if let snapshotData = worldMap.snapshotAnchor?.imageData,
             let snapshot = UIImage(data: snapshotData) {
@@ -222,9 +225,12 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         } else {
             print("No snapshot image in world map")
         }
+        
+        // 从世界地图中删除快照锚点，因为我们在场景中不需要它
         // Remove the snapshot anchor from the world map since we do not need it in the scene.
         worldMap.anchors.removeAll(where: { $0 is SnapshotAnchor })
         
+        // 世界追踪设置
         let configuration = self.defaultConfiguration // this app's standard world tracking settings
         configuration.initialWorldMap = worldMap
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
@@ -234,7 +240,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     }
 
     // MARK: - AR session management
-    /// 是否加载map
+    /// 是否重定位map
     var isRelocalizingMap = false
 
     var defaultConfiguration: ARWorldTrackingConfiguration {
@@ -287,18 +293,24 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     // MARK: - Placing AR Content
     
+    // 放置模型
     /// - Tag: PlaceObject
     @IBAction func handleSceneTap(_ sender: UITapGestureRecognizer) {
+        
+        // session在relocalizing状态时，不能放置模型
         // Disable placing objects when the session is still relocalizing
         if isRelocalizingMap && virtualObjectAnchor == nil {
             return
         }
+        
+        // 击中测试找到位置
         // Hit test to find a place for a virtual object.
         guard let hitTestResult = sceneView
             .hitTest(sender.location(in: sceneView), types: [.existingPlaneUsingGeometry, .estimatedHorizontalPlane])
             .first
             else { return }
         
+        // 删除锚点，添加新锚点
         // Remove exisitng anchor and add new anchor
         if let existingAnchor = virtualObjectAnchor {
             sceneView.session.remove(anchor: existingAnchor)
