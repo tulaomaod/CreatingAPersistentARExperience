@@ -145,10 +145,10 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
      
      重要提示：
      当app处于ARCamera.TrackingState.Reason.relocalizing状态，为用户提供一个出路，以防重定位不能成功
+     例如：提供一个重置session的按钮，该按钮在relocalizing状态保持固定时间后出现
      
-     
-     
-     
+     放弃relocalizing状态，通过run(_:options:)，resetTracking 选项
+     重置追踪将丢弃中断前的所有追踪状态，但会保留重定位期间获得的世界追踪结果
      */
     func sessionShouldAttemptRelocalization(_ session: ARSession) -> Bool {
         return true
